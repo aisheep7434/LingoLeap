@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  profiles Profile[]
+  
+  @@map("users")
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String?
+  avatar    String?
+  level     Int      @default(1)
+  experience Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decks  Deck[]
+  
+  @@map("profiles")
+}
+
+model Deck {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  public      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  profileId  String
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  cards      Card[]
+  studySessions StudySession[]
+  
+  @@map("decks")
+}
+
+model Card {
+  id          String   @id @default(cuid())
+  front       String
+  back        String
+  difficulty  Int      @default(1) // 1-5 scale
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  deckId           String
+  deck             Deck             @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  studyRecords     StudyRecord[]
+  
+  @@map("cards")
+}
+
+model StudySession {
+  id        String   @id @default(cuid())
+  startTime DateTime @default(now())
+  endTime   DateTime?
+  score     Int?
+  deckId    String
+  
+  // Relations
+  deck   Deck   @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  records StudyRecord[]
+  
+  @@map("study_sessions")
+}
+
+model StudyRecord {
+  id         String   @id @default(cuid())
+  correct    Boolean
+  timeSpent  Int      // in seconds
+  sessionId  String
+  cardId     String
+  
+  // Relations
+  session StudySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  card    Card         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  @@map("study_records")
+}
